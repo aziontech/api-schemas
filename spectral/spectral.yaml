@@ -1,0 +1,587 @@
+# Spectral OpenAPI Linting Rules - Azion Standards
+
+extends: spectral:oas
+
+# ==============================================================================
+# CUSTOM FUNCTIONS
+# ==============================================================================
+functions:
+  - ./checkEndpointStatusCodes
+  - ./checkQueryStringsPagination
+  - ./checkNumberMinimumLimit
+  - ./checkNumberMaximumLimit
+  - ./checkStringMinLength
+  - ./checkStringMaxLength
+  - ./checkStringPattern
+  - ./checkFieldsQueryParam
+  - ./checkContentTypeResponse
+  - ./checkStateDeletedResource
+  - ./checkSearchParameter
+  - ./checkOrderingParameter
+  - ./checkResourceIDUsage
+  - ./checkPathEndsWithSForList
+  - ./checkDataObjectType
+  - ./checkDataKeysPresence
+
+rules:
+  # ============================================================================
+  # 1. OPERATION IDs
+  # ============================================================================
+  azion-operation-id-required:
+    description: Every operation must have an explicit operationId
+    message: "Operation '{{property}}' is missing required 'operationId'"
+    severity: error
+    given: $.paths.*[get,put,post,patch,delete,options,head]
+    then:
+      field: operationId
+      function: truthy
+
+  azion-operation-id-pattern:
+    message: "operationId must follow snake_case convention (e.g., 'list_applications', not 'listApplications')"
+    severity: error
+    given: $.paths.*[get,put,post,patch,delete,options,head]
+    then:
+      field: operationId
+      function: pattern
+      functionOptions:
+        match: '^[a-z][a-z0-9]*(_[a-z0-9]+)*$'
+
+  azion-operation-id-crud-convention:
+    description: CRUD operations should follow naming conventions (list_*, get_*, create_*, update_*, patch_*, delete_*)
+    message: "operationId '{{value}}' doesn't follow CRUD convention for {{property}} method"
+    severity: warn
+    given: $.paths.*[get,post,put,patch,delete]
+    then:
+      field: operationId
+      function: pattern
+      functionOptions:
+        match: '^(list_|get_|create_|update_|patch_|delete_|clone_|purge_|activate_|deactivate_)[a-z][a-z0-9_]*$'
+
+  # ============================================================================
+  # 2. PATH PARAMETERS
+  # ============================================================================
+  azion-path-parameter-type-required:
+    description: Path parameters must have explicit type
+    message: "Path parameter '{{property}}' is missing 'schema.type'"
+    severity: error
+    given: $.paths.*.*.parameters[?(@.in == 'path')]
+    then:
+      field: schema.type
+      function: truthy
+
+  azion-path-parameter-required:
+    description: Path parameters must be marked as required
+    message: "Path parameter '{{property}}' must have 'required: true'"
+    severity: error
+    given: $.paths.*.*.parameters[?(@.in == 'path')]
+    then:
+      field: required
+      function: truthy
+
+  azion-path-parameter-description-required:
+    description: Path parameters must have a description
+    message: "Path parameter '{{property}}' is missing 'description'"
+    severity: error
+    given: $.paths.*.*.parameters[?(@.in == 'path')]
+    then:
+      field: description
+      function: truthy
+
+  # ============================================================================
+  # 3. QUERY PARAMETERS - PAGINATION
+  # ============================================================================
+  azion-mandatory-query-string-pagination:
+    message: "{{error}}"
+    severity: error
+    given: "$.paths[?(@property != '/api/schema')]"
+    then:
+      function: checkQueryStringsPagination
+
+  # ============================================================================
+  # 4. QUERY PARAMETERS - FILTERS
+  # ============================================================================
+  azion-query-param-fields-rule:
+    message: "{{error}}"
+    severity: error
+    given: "$.paths"
+    then:
+      function: checkFieldsQueryParam
+
+  azion-filter-description-required:
+    description: Query parameters (filters) must have a description
+    message: "Query parameter '{{property}}' is missing 'description'"
+    severity: error
+    given: "$.paths.*.*.parameters[?(@.in == 'query')]"
+    then:
+      field: description
+      function: truthy
+
+  # ============================================================================
+  # 5. SEARCH AND ORDERING
+  # ============================================================================
+  azion-match-search-parameter:
+    message: "{{error}}"
+    severity: error
+    given: "$.paths.*.*.parameters[*][?(@.in == 'query' && @.name == 'search')]"
+    then:
+      function: checkSearchParameter
+
+  azion-match-ordering-parameter:
+    message: "{{error}}"
+    severity: error
+    given: "$.paths.*.*.parameters[*][?(@.in == 'query' && @.name == 'ordering')]"
+    then:
+      function: checkOrderingParameter
+
+  azion-ordering-enum-required:
+    description: Ordering parameter must have enum with valid field names
+    message: "Ordering parameter must define 'enum' with available fields (e.g., ['id', '-id', 'name', '-name'])"
+    severity: warn
+    given: "$.paths.*.*.parameters[*][?(@.in == 'query' && @.name == 'ordering')]"
+    then:
+      field: schema.enum
+      function: truthy
+
+  # ============================================================================
+  # 6. STATUS CODES
+  # ============================================================================
+  azion-sps-invalid-status-code:
+    message: "Status code '{{property}}' is not in the allowed list"
+    severity: error
+    given: $.paths...responses.*~
+    then:
+      function: enumeration
+      functionOptions:
+        values: ["200","201","202","204","400","401","403","404","405","406","409","422","429","500"]
+
+  azion-mandatory-status-codes:
+    message: "{{error}}"
+    severity: error
+    given: "$.paths[?(@property != '/api/schema')].*"
+    then:
+      function: checkEndpointStatusCodes
+
+  azion-delete-response-codes:
+    description: DELETE operations must return 200 or 202, not 204
+    message: DELETE operations must return 200 (OK) or 202 (Accepted), not 204
+    severity: error
+    given: $.paths[*].delete.responses
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          anyOf:
+            - required: ['200']
+            - required: ['202']
+          not:
+            required: ['204']
+
+  azion-204-no-response-body:
+    description: 204 responses must not have a response body
+    severity: error
+    given: $.paths[*][*].responses.204
+    then:
+      field: content
+      function: falsy
+
+  azion-get-response-200:
+    description: GET operations must return 200 status code
+    message: GET operation must include 200 status code in responses
+    severity: error
+    given: $.paths[*].get.responses
+    then:
+      field: "200"
+      function: truthy
+
+  azion-post-response-codes:
+    description: POST operations must return 201 (sync) or 202 (async)
+    message: POST operations must return 201 (Created) or 202 (Accepted)
+    severity: error
+    given: $.paths[*].post.responses
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          anyOf:
+            - required: ['201']
+            - required: ['202']
+
+  azion-put-response-200:
+    description: PUT operations must return 200 status code
+    message: PUT operation must include 200 status code in responses
+    severity: error
+    given: $.paths[*].put.responses
+    then:
+      field: "200"
+      function: truthy
+
+  azion-patch-response-codes:
+    description: PATCH operations must return 200 (sync) or 202 (async)
+    message: PATCH operations must return 200 (OK) or 202 (Accepted)
+    severity: error
+    given: $.paths[*].patch.responses
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          anyOf:
+            - required: ['200']
+            - required: ['202']
+
+  # ============================================================================
+  # 7. ERROR RESPONSES - JSON:API FORMAT
+  # ============================================================================
+
+  azion-has-key-error-response:
+    message: "Error response must have 'detail' field"
+    severity: error
+    given: "$.responses[*]"
+    then:
+      field: content.application/json.schema.properties.detail
+      function: truthy
+
+  azion-match-type-error-response:
+    message: "Error 'detail' field must be of type string"
+    severity: error
+    given: "$.responses[*]"
+    then:
+      field: content.application/json.schema.properties.detail.type
+      function: schema
+      functionOptions:
+        schema:
+          type: string
+
+  azion-auth-error-responses-required:
+    description: Endpoints with security must document 401 and 403 error responses
+    message: "Authenticated endpoint must document 401 (Unauthorized) and 403 (Forbidden) responses"
+    severity: error
+    given: "$.paths.*.*[?(@.security)]"
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          properties:
+            responses:
+              required: ['401', '403']
+
+  # ============================================================================
+  # 8. ASYNC OPERATIONS (202 Accepted)
+  # ============================================================================
+
+  azion-async-operation-id-required:
+    description: Async operation response must have operation_id field
+    message: "202 response schema must include 'operation_id' field"
+    severity: warn
+    given: "$.paths.*.*.responses.202.content.*.schema.properties"
+    then:
+      field: operation_id
+      function: truthy
+
+  # ============================================================================
+  # 9. SCHEMAS - NAMING CONVENTIONS
+  # ============================================================================
+
+  azion-boolean-naming-convention:
+    description: Boolean properties must not start with 'is' prefix
+    severity: error
+    given: $..properties[*][?(@ && @.type == 'boolean')]^
+    then:
+      field: "@key"
+      function: pattern
+      functionOptions:
+        notMatch: '^is[A-Z]'
+
+  # ============================================================================
+  # 10. CONSTRAINTS
+  # ============================================================================
+
+  azion-number-minimum-limit-rule:
+    message: "{{error}}"
+    severity: error
+    given: "$.components.schemas.*.properties.*"
+    then:
+      function: checkNumberMinimumLimit
+
+  azion-number-maximum-limit-rule:
+    message: "{{error}}"
+    severity: error
+    given: "$.components.schemas.*.properties.*"
+    then:
+      function: checkNumberMaximumLimit
+
+  azion-string-minlength-properties-rule:
+    message: "{{error}}"
+    severity: error
+    given: "$.components.schemas.*.properties.*"
+    then:
+      function: checkStringMinLength
+
+  azion-string-maxlength-properties-rule:
+    message: "{{error}}"
+    severity: error
+    given: "$.components.schemas.*.properties.*"
+    then:
+      function: checkStringMaxLength
+
+  azion-string-pattern-properties-rule:
+    message: "{{error}}"
+    severity: error
+    given: "$.components.schemas.*.properties.*"
+    then:
+      function: checkStringPattern
+
+  azion-date-time-format-rule:
+    message: "DateTime fields must follow RFC 3339 format"
+    severity: error
+    given: "$.components.schemas.*.properties.last_modified"
+    then:
+      - function: checkStringPattern
+        pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+
+  # ============================================================================
+  # 11. DESCRIPTIONS
+  # ============================================================================
+
+  azion-operation-description-required:
+    description: Operations must have a detailed description
+    message: "Operation '{{property}}' is missing 'description'"
+    severity: error
+    given: $.paths.*[get,put,post,patch,delete]
+    then:
+      field: description
+      function: truthy
+
+  azion-operation-summary-length:
+    description: Operation summary should be concise (max 100 characters)
+    message: "Operation summary is too long ({{value}} chars). Keep it under 100 characters."
+    severity: warn
+    given: $.paths.*[get,put,post,patch,delete].summary
+    then:
+      function: length
+      functionOptions:
+        max: 100
+
+  # ============================================================================
+  # 12. EXAMPLES
+  # ============================================================================
+
+  azion-request-examples-required:
+    description: POST and PUT operations should have request examples
+    message: "{{property}} operation should include request examples for better documentation"
+    severity: warn
+    given: "$.paths.*[post,put]"
+    then:
+      field: requestBody.content.*.examples
+      function: truthy
+
+  # ============================================================================
+  # 13. CONTENT-TYPE
+  # ============================================================================
+
+  azion-match-content-type-response:
+    message: "{{error}}"
+    severity: error
+    given: "$.paths[?(@property != '/api/schema')].*.responses.*.content"
+    then:
+      function: checkContentTypeResponse
+
+  # ============================================================================
+  # 14. PATH NAMING
+  # ============================================================================
+
+  azion-sps-paths-valid-uri:
+    message: "Path should not contain 'api', 'v4', single segment, or trailing slash"
+    severity: warn
+    given: "$.paths"
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "api|v4|^[^/]*\/[^/]*$|/$"
+
+  azion-endpoint-ddd-and-snake:
+    message: "Path must follow snake_case and hierarchical structure"
+    severity: error
+    given: $.paths.*~
+    then:
+      - function: pattern
+        functionOptions:
+          match: "^(/[a-z][a-z0-9]+(_[a-z][a-z0-9]+)*){2,}($|/({[a-z][a-zA-Z0-9_]+}|[a-z][a-z0-9]+(_[a-z0-9]+)*)+)*$"
+
+  azion-path-naming-convention:
+    message: "{{error}}"
+    severity: warn
+    given: $.paths
+    then:
+      function: checkPathEndsWithSForList
+
+  azion-endpoint-uri-method-validation:
+    message: "Path should not contain HTTP method names"
+    severity: error
+    given: $.paths.*~
+    then:
+      - function: pattern
+        functionOptions:
+          notMatch: "/.*(GET|POST|PUT|PATCH|DELETE).*/i"
+
+  azion-validate-resource-id-usage:
+    message: "{{error}}"
+    severity: error
+    given: "$.paths"
+    then:
+      function: checkResourceIDUsage
+
+  # ============================================================================
+  # 15. AUTHORIZATION
+  # ============================================================================
+
+  azion-authorization-header:
+    message: "Operation must define security requirements"
+    severity: error
+    given: "$.paths.*.*.security"
+    then:
+      function: truthy
+
+  azion-security-scheme-bearer:
+    description: Security schemes should use Bearer token with JWT
+    message: "Security scheme must use 'bearer' scheme with bearerFormat 'JWT'"
+    severity: error
+    given: "$.components.securitySchemes.*[?(@.type == 'http')]"
+    then:
+      field: scheme
+      function: pattern
+      functionOptions:
+        match: "^bearer$"
+
+  # ============================================================================
+  # 16. REQUEST BODY
+  # ============================================================================
+
+  azion-request-body-required:
+    description: POST, PUT, and PATCH operations must have requestBody
+    message: "{{property}} operation is missing 'requestBody'"
+    severity: error
+    given: "$.paths.*[post,put,patch]"
+    then:
+      field: requestBody
+      function: truthy
+
+  azion-request-body-required-flag:
+    description: requestBody should be marked as required
+    message: "requestBody should have 'required: true'"
+    severity: warn
+    given: "$.paths.*[post,put,patch].requestBody"
+    then:
+      field: required
+      function: truthy
+
+  # ============================================================================
+  # 17. HEADERS
+  # ============================================================================
+
+  azion-header-disallowed:
+    description: Authorization, Content-Type, and Accept headers must not be defined as header parameters
+    message: 'Header parameter "{{value}}" must not be defined explicitly'
+    severity: error
+    given:
+      - $.paths[?(!@property.match(/storage.*objects/))].parameters[?(@.in == 'header')]
+      - $.paths[?(!@property.match(/storage.*objects/))].*[get,put,post,patch,delete,options,head].parameters[?(@.in == 'header')]
+    then:
+      function: pattern
+      field: name
+      functionOptions:
+        notMatch: '/^(authorization|content-type|accept)$/i'
+
+  # ============================================================================
+  # 18. METADATA GLOBAL
+  # ============================================================================
+
+  azion-service-name-pattern:
+    message: "API title must end with '-api'"
+    severity: error
+    given: "$.info.title"
+    then:
+      function: pattern
+      functionOptions:
+        match: ".*-api$"
+
+  azion-version-semantic:
+    description: API version should follow semantic versioning
+    message: "info.version should follow semantic versioning (e.g., '4.0.0')"
+    severity: error
+    given: "$.info.version"
+    then:
+      function: pattern
+      functionOptions:
+        match: "^\\d+\\.\\d+\\.\\d+$"
+
+  # ============================================================================
+  # 19. RESPONSE BODIES
+  # ============================================================================
+
+  azion-validate-count-and-results:
+    message: "{{error}}"
+    severity: error
+    given: "$.responses[*]"
+    then:
+      - field: content.application/json.schema.properties.detail.properties
+        function: schema
+        functionOptions:
+          schema:
+            type: object
+            properties:
+              count:
+                type: integer
+              results:
+                type: array
+
+  azion-data-object-type-rule:
+    message: "{{error}}"
+    severity: error
+    given: "$.responses[*].content.application/json.schema"
+    then:
+      function: checkDataObjectType
+
+  azion-data-keys-presence-rule:
+    message: "{{error}}"
+    severity: error
+    given: "$.responses[*].content.application/json.schema"
+    then:
+      function: checkDataKeysPresence
+
+  # ============================================================================
+  # 20. DELETED RESOURCES
+  # ============================================================================
+
+  azion-deleted-resource-state-validation:
+    message: "{{error}}"
+    severity: error
+    given: "$.paths.*.*.responses.*"
+    then:
+      function: checkStateDeletedResource
+
+  # ============================================================================
+  # 21. BUSINESS NAMING
+  # ============================================================================
+
+  azion-no-technical-schema-names:
+    description: Schema names must use business terminology, not technical implementation details
+    message: "Schema '{{property}}' uses technical naming. Use business domain names instead. Examples: 'Database' instead of 'OpenAPISchema', 'PaginatedDatabaseList' instead of 'PaginatedOpenAPISchemaList'"
+    severity: error
+    given: $.components.schemas.*~
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "^.*(OpenAPI|Schema(?!Enum$)|DTO|Entity|Model(?!$)|RESTful|Swagger).*$"
+
+  # ============================================================================
+  # 22. EXTENSIBLE ENUMS
+  # ============================================================================
+
+  x-extensible-enum-required:
+    description: Enums must include x-extensible-enum to ensure forward compatibility
+    message: "Enum '{{path}}' is missing 'x-extensible-enum' property for forward compatibility"
+    severity: error
+    given: "$.components.schemas[*][?(@property === 'enum')]^"
+    then:
+      field: x-extensible-enum
+      function: truthy
