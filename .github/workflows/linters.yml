@@ -3,71 +3,27 @@ name: OpenAPI Spectral Linter
 on:
   pull_request:
     branches:
-        - main
+      - main
+  push:
+    branches:
+      - main
 
 jobs:
-  spectral:
+  spectral-v4:
+    name: Lint OpenAPI v4
     runs-on: ubuntu-latest
-    container:
-      image: node:14-alpine3.12
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
       - name: Install Spectral
-        run: npm install @stoplight/spectral-cli
+        run: npm install -g @stoplight/spectral-cli
 
-      - name: Run Spectral Lint on Credentials API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-credentials.yaml credentials.yaml --display-only-failures || exit 1
-        
-      - name: Run Spectral Lint on Data Streaming API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-datastreaming.yaml data_streaming.yaml --display-only-failures || exit 1
-
-      - name: Run Spectral Lint on Digital Certificates API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-digital_certificates.yaml digital_certificates.yaml --display-only-failures || exit 1
-
-      - name: Run Spectral Lint on Domains API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-domains.yaml domains.yaml --display-only-failures || exit 1
-
-      - name: Run Spectral Lint on Edge Applications API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-edgeapplications.yaml edgeapplications.yaml --display-only-failures || exit 1
-
-      - name: Run Spectral Lint on Edge Firewall API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-edgefirewall.yaml edgefirewall.yaml --display-only-failures || exit 1
-
-      - name: Run Spectral Lint on Edge Functions API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-edgefunctions.yaml edgefunctions.yaml --display-only-failures || exit 1
-
-      - name: Run Spectral Lint on Edge Functions Instance Edge Firewall API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-edgefuncinstedgefirewall.yaml edgefunctionsinstance_edgefirewall.yaml --display-only-failures || exit 1
-
-      - name: Run Spectral Lint on Edge Node API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-edgenode.yaml edgenode.yaml --display-only-failures || exit 1
-
-      - name: Run Spectral Lint on IAM API API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-iam.yaml iam.yml --display-only-failures || exit 1
-
-      - name: Run Spectral Lint on Intelligent DNS API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-idns.yaml idns.yaml --display-only-failures || exit 1
-
-      - name: Run Spectral Lint on Network List API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-networklist.yaml networklist.yaml --display-only-failures || exit 1
-
-      - name: Run Spectral Lint on Personal Tokens API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-personaltokens.yaml personal_tokens.yaml --display-only-failures || exit 1
-
-      - name: Run Spectral Lint on Realtime Purge API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-realtimepurge.yaml realtimepurge.yaml --display-only-failures || exit 1
-
-      - name: Run Spectral Lint on Services API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-services.yaml services.yaml --display-only-failures || exit 1
-
-      - name: Run Spectral Lint on Storage API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-storage.yaml storage.yaml --display-only-failures || exit 1
-
-      - name: Run Spectral Lint on Variables API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-variables.yaml variables.yaml --display-only-failures || exit 1
-
-      - name: Run Spectral Lint on WAF API
-        run: npx spectral lint --verbose --ruleset spectral/.spectral-waf.yaml waf.yaml --display-only-failures || exit 1
+      - name: Run Spectral Lint on OpenAPI v4
+        run: spectral lint openapi.yaml --ruleset spectral/spectral.yaml --verbose

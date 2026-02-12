@@ -3,17 +3,34 @@
 
 OpenAPI 3.0 specification for Azion APIs.
 
-|YAML|DESCRIPTION|
-|---|---|
-|`credentials.yaml`|Credentials API, part of the Orchestration Architecture.|
-|`domains.yaml`|Domains API enables you to retrieve, create, remove or update Domains used by Edge Applications.|
-|`edgeapplications.yaml`|Edge Applications allows you to check, remove and/or update your existing settings, as well as creating new ones.|
-|`edgefunctions.yaml`|Edge Functions API.|
-|`edgenode.yaml`|Edge Node API, part of the Orchestration Architecture.|
-|`idns.yaml`|Intelligent DNS API.|
-|`realtimepurge.yaml`|Real-Time Purge API enables you to purge a cache entry before its TTL for Edge Caching or L2 Caching|
-|`services.yaml`|Edge Services API, part of the Orchestration Architecture.|
-|`waf.yaml`|WAF API -- WAF self-calibration enables you to create allowed rules that are meaningful to your application.|
+## 📄 OpenAPI Files
+
+### API v4 (Current)
+- **[openapi.yaml](openapi.yaml)** - Complete Azion API v4 specification
+
+### API v3 (Legacy)
+Legacy API specifications are available in the `v3/` directory for backward compatibility.
+
+## 🚀 Quick Start
+
+```bash
+# View with Swagger UI
+npx @redocly/cli preview-docs openapi.yaml
+
+# Validate with Spectral
+npx @stoplight/spectral-cli lint openapi.yaml --ruleset spectral/spectral.yaml
+
+# Generate client SDKs
+openapi-generator-cli generate -i openapi.yaml -g python -o ./client
+```
+
+## 📚 Documentation
+
+- **[Spectral Validation Rules](spectral/README.md)** - Comprehensive guide to all custom Spectral linting rules
+
+## 🔄 Synchronization
+
+The `openapi.yaml` file is automatically synchronized from [azionapi-v4-openapi](https://github.com/aziontech/azionapi-v4-openapi) when changes are merged to the main branch.
 
 ## License
 

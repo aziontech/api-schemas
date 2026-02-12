@@ -1,0 +1,66 @@
+name: Sync from azionapi-v4-openapi
+
+on:
+  # Triggered by repository dispatch from azionapi-v4-openapi
+  repository_dispatch:
+    types: [sync-openapi-v4]
+  
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: 'Branch or tag from azionapi-v4-openapi to sync from'
+        required: false
+        default: 'main'
+
+jobs:
+  sync:
+    name: Sync OpenAPI v4
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout azionapi-openapi
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GLOBAL_TOKEN }}
+          fetch-depth: 0
+
+      - name: Checkout azionapi-v4-openapi
+        uses: actions/checkout@v4
+        with:
+          repository: aziontech/azionapi-v4-openapi
+          ref: ${{ github.event.inputs.source_ref || 'main' }}
+          path: v4-source
+          token: ${{ secrets.GLOBAL_TOKEN }}
+
+      - name: Sync openapi.yaml
+        run: |
+          cp v4-source/openapi.yaml openapi.yaml
+          echo "Synced openapi.yaml from azionapi-v4-openapi"
+
+      - name: Sync spectral rules
+        run: |
+          rm -rf spectral
+          cp -r v4-source/spectral spectral
+          echo "Synced spectral rules from azionapi-v4-openapi"
+
+      - name: Cleanup
+        run: rm -rf v4-source
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add openapi.yaml spectral/
+          git commit -m "chore: sync openapi.yaml and spectral from azionapi-v4-openapi"
+          git push
