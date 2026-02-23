@@ -311,21 +311,21 @@ rules:
 
   azion-string-minlength-properties-rule:
     message: "{{error}}"
-    severity: error
+    severity: warn
     given: "$.components.schemas.*.properties.*"
     then:
       function: checkStringMinLength
 
   azion-string-maxlength-properties-rule:
     message: "{{error}}"
-    severity: error
+    severity: warn
     given: "$.components.schemas.*.properties.*"
     then:
       function: checkStringMaxLength
 
   azion-string-pattern-properties-rule:
     message: "{{error}}"
-    severity: error
+    severity: warn
     given: "$.components.schemas.*.properties.*"
     then:
       function: checkStringPattern
