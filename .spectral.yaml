@@ -1,5 +1,9 @@
-functions: [checkEndpointStatusCodes]
+functions:
+  - checkEndpointStatusCodes
+  - checkCreatedAtField
+
 extends: spectral:oas
+
 rules:
   my-rule:
     message: "{{error}}"
@@ -7,3 +11,15 @@ rules:
     given: $.
     then:
       function: checkEndpointStatusCodes
+
+  check-created-at-field:
+    message: "{{error}}"
+    severity: error
+    given: $.
+    then:
+      function: checkCreatedAtField
+    description: |
+      Ensures that POST creation endpoints include a 'created_at' field
+      in their response schema for proper resource tracking and auditing.
+      Reports ERROR when the field is missing entirely.
+      When a variation like 'created' is used instead, reports a message suggesting standardization.
