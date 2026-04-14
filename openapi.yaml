@@ -3677,6 +3677,18 @@ paths:
           type: boolean
         description: Filter by active status.
       - in: query
+        name: created__gte
+        schema:
+          type: string
+          format: date-time
+        description: Filter by created date (greater than or equal).
+      - in: query
+        name: created__lte
+        schema:
+          type: string
+          format: date-time
+        description: Filter by created date (less than or equal).
+      - in: query
         name: data_set_id
         schema:
           type: integer
@@ -3970,6 +3982,18 @@ paths:
         schema:
           type: boolean
         description: Filter by active status.
+      - in: query
+        name: created_at__gte
+        schema:
+          type: string
+          format: date-time
+        description: Filter by created date (greater than or equal).
+      - in: query
+        name: created_at__lte
+        schema:
+          type: string
+          format: date-time
+        description: Filter by created date (less than or equal).
       - in: query
         name: custom
         schema:
@@ -6104,7 +6128,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedFunctionsList'
+                $ref: '#/components/schemas/PaginatedEdgeFunctionList'
           description: List of functions retrieved successfully.
         '401':
           $ref: '#/components/responses/Unauthorized'
@@ -9272,24 +9296,36 @@ components:
       additionalProperties: false
     DataSourceEnum:
       enum:
-      - http
+      - workloads
       - waf
-      - functions
-      - activity
+      - functions_console
+      - activity_history
+      - http
+      - cells_console
+      - rtm_activity
       type: string
-      description: '* `http` - Applications
+      description: '* `workloads` - Workloads
 
         * `waf` - WAF Events
 
-        * `functions` - Functions
+        * `functions_console` - Functions Console
 
-        * `activity` - Activity History'
+        * `activity_history` - Activity History
+
+        * `http` - Applications
+
+        * `cells_console` - Functions
+
+        * `rtm_activity` - Activity History'
       title: DataSourceEnum
       x-extensible-enum:
-      - http
+      - workloads
       - waf
-      - functions
-      - activity
+      - functions_console
+      - activity_history
+      - http
+      - cells_console
+      - rtm_activity
     DataStream:
       type: object
       properties:
@@ -9308,6 +9344,11 @@ components:
           pattern: .*
           maxLength: 100
           minLength: 1
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+          pattern: ^.*$
         last_modified:
           type: string
           format: date-time
@@ -9335,6 +9376,7 @@ components:
           items:
             $ref: '#/components/schemas/OutputBase'
       required:
+      - created
       - id
       - inputs
       - last_editor
@@ -10156,6 +10198,11 @@ components:
           pattern: .*
           maxLength: 100
           minLength: 1
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          pattern: ^.*$
         last_modified:
           type: string
           format: date-time
@@ -10173,6 +10220,7 @@ components:
           maxLength: 65535
           minLength: 1
       required:
+      - created_at
       - custom
       - data_set
       - id
@@ -11785,7 +11833,13 @@ components:
           $ref: '#/components/schemas/BrowserCacheModule'
         modules:
           $ref: '#/components/schemas/CacheSettingsModules'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
       required:
+      - created_at
       - id
       - name
       title: CacheSetting
@@ -12285,6 +12339,10 @@ components:
           type: string
           format: date-time
           readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
         active:
           type: boolean
           default: true
@@ -12309,6 +12367,7 @@ components:
           $ref: '#/components/schemas/ConnectorHTTPAttributes'
       required:
       - attributes
+      - created_at
       - id
       - last_editor
       - last_modified
@@ -12437,6 +12496,10 @@ components:
           type: string
           format: date-time
           readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
         active:
           type: boolean
           default: true
@@ -12452,6 +12515,7 @@ components:
           items:
             $ref: '#/components/schemas/PageBase'
       required:
+      - created_at
       - id
       - last_editor
       - last_modified
@@ -12513,7 +12577,13 @@ components:
           pattern: .*
           maxLength: 512
           minLength: 1
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
       required:
+      - created_at
       - id
       - name
       - user_agent
@@ -12565,6 +12635,148 @@ components:
       x-extensible-enum:
       - both
       - force_ipv4
+    Function:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+          format: int64
+        name:
+          type: string
+          pattern: .*
+          maxLength: 250
+          minLength: 1
+        last_editor:
+          type: string
+          readOnly: true
+          pattern: .*
+          maxLength: 250
+        last_modified:
+          type: string
+          format: date-time
+          readOnly: true
+        product_version:
+          type: string
+          readOnly: true
+          pattern: .*
+          maxLength: 50
+        active:
+          type: boolean
+          default: true
+        runtime:
+          allOf:
+          - $ref: '#/components/schemas/RuntimeEnum'
+          default: azion_js
+        execution_environment:
+          allOf:
+          - $ref: '#/components/schemas/ExecutionEnvironmentEnum'
+          default: application
+        default_args:
+          type: object
+          description: 'Args to be accessed by the Function.
+
+            - default_args must be a JSON object or an array.
+
+            - If there are no args being informed, an empty JSON object will be used.
+
+            '
+          properties:
+            arg:
+              type: object
+          example:
+            arg_01: value_01
+        azion_form:
+          type: object
+          description: 'JSON schema to be rendered as a json args form.
+
+            - azion_form must be a JSON schema.
+
+            - If there are no schema being informed, an empty JSON object will be
+            used.
+
+            '
+          properties:
+            arg:
+              type: object
+          example:
+            type: object
+            properties:
+              domain:
+                type: string
+                title: Domain
+                description: Domain where the cookie will be valid (use '.' at the
+                  beginning for subdomains)
+                default: .azion.com
+                pattern: ^[.]?[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.[a-zA-Z]{2,}$
+              max_age:
+                type: integer
+                title: Max Age (seconds)
+                description: Cookie lifetime in seconds
+                default: 180
+                minimum: 1
+                maximum: 31536000
+              path:
+                type: string
+                title: Path
+                description: Path where the cookie will be valid
+                default: /
+                pattern: ^/
+              values:
+                type: array
+                title: Test Variations
+                description: List of A/B test variations with their respective weights
+                minItems: 2
+                maxItems: 10
+                items:
+                  type: object
+                  properties:
+                    value:
+                      type: string
+                      title: Variation Value
+                      description: Unique variation identifier
+                      minLength: 1
+                      maxLength: 50
+                      pattern: ^[a-zA-Z0-9_-]+$
+                    weight:
+                      type: integer
+                      title: Weight
+                      description: Variance weight (higher weight = higher probability)
+                      minimum: 1
+                      maximum: 100
+                  required:
+                  - value
+                  - weight
+                  additionalProperties: false
+            required:
+            - domain
+            - max_age
+            - path
+            - values
+            additionalProperties: false
+        reference_count:
+          type: integer
+          readOnly: true
+          format: int64
+        version:
+          type: string
+          readOnly: true
+          description: Installed version, which may not be the latest if the vendor
+            has released updates since installation.
+        vendor:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - last_editor
+      - last_modified
+      - name
+      - product_version
+      - reference_count
+      - vendor
+      - version
+      title: Function
+      additionalProperties: false
     FunctionModule:
       type: object
       properties:
@@ -12714,9 +12926,9 @@ components:
           readOnly: true
         code:
           type: string
-          description: 'String containing the function code. Maximum size: 20.0MB'
+          description: 'String containing the function code. Maximum size: 50.0MB'
           pattern: .*
-          maxLength: 20971520
+          maxLength: 52428800
           minLength: 1
       required:
       - code
@@ -12834,9 +13046,9 @@ components:
         code:
           type: string
           minLength: 1
-          description: 'String containing the function code. Maximum size: 20.0MB'
+          description: 'String containing the function code. Maximum size: 50.0MB'
           pattern: .*
-          maxLength: 20971520
+          maxLength: 52428800
       required:
       - code
       - name
@@ -12891,6 +13103,10 @@ components:
           type: string
           format: date-time
           readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
         product_version:
           type: string
           readOnly: true
@@ -12898,6 +13114,7 @@ components:
           maxLength: 50
           minLength: 3
       required:
+      - created_at
       - id
       - last_editor
       - last_modified
@@ -13245,7 +13462,12 @@ components:
           type: string
           format: date-time
           readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
       required:
+      - created_at
       - function
       - id
       - last_editor
@@ -13488,6 +13710,10 @@ components:
           type: string
           format: date-time
           readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
         active:
           type: boolean
           default: true
@@ -13520,6 +13746,7 @@ components:
           format: int64
       required:
       - behaviors
+      - created_at
       - criteria
       - id
       - last_editor
@@ -13707,7 +13934,12 @@ components:
           type: string
           format: date-time
           readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
       required:
+      - created_at
       - function
       - id
       - last_editor
@@ -14473,10 +14705,15 @@ components:
           type: string
           format: date-time
           readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
         active:
           type: boolean
           default: true
       required:
+      - created_at
       - id
       - items
       - last_editor
@@ -14560,10 +14797,15 @@ components:
           type: string
           format: date-time
           readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
         active:
           type: boolean
           default: true
       required:
+      - created_at
       - id
       - last_editor
       - last_modified
@@ -14919,7 +15161,7 @@ components:
             $ref: '#/components/schemas/DeviceGroup'
       title: PaginatedDeviceGroupList
       additionalProperties: false
-    PaginatedFunctionsList:
+    PaginatedEdgeFunctionList:
       type: object
       properties:
         count:
@@ -14965,8 +15207,8 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/Functions'
-      title: PaginatedFunctionsList
+            $ref: '#/components/schemas/Function'
+      title: PaginatedEdgeFunctionList
       additionalProperties: false
     PaginatedFirewallFunctionInstanceList:
       type: object
@@ -15655,9 +15897,9 @@ components:
         code:
           type: string
           minLength: 1
-          description: 'String containing the function code. Maximum size: 20.0MB'
+          description: 'String containing the function code. Maximum size: 50.0MB'
           pattern: .*
-          maxLength: 20971520
+          maxLength: 52428800
       title: PatchedFunctionsRequest
       additionalProperties: false
     PatchedFirewallFunctionInstanceRequest:
@@ -16606,8 +16848,13 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
       required:
       - behaviors
+      - created_at
       - criteria
       - id
       - last_editor
@@ -16762,8 +17009,13 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
       required:
       - behaviors
+      - created_at
       - criteria
       - id
       - last_editor
@@ -18586,6 +18838,10 @@ components:
           type: string
           format: date-time
           readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
         infrastructure:
           allOf:
           - $ref: '#/components/schemas/InfrastructureEnum'
@@ -18616,6 +18872,7 @@ components:
           readOnly: true
           pattern: ^(custom|\d+\.\d+)$
       required:
+      - created_at
       - id
       - last_editor
       - last_modified
@@ -18963,6 +19220,10 @@ components:
           type: string
           format: date-time
           readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
         active:
           type: boolean
           default: true
@@ -18987,6 +19248,7 @@ components:
           $ref: '#/components/schemas/ConnectorStorageAttributes'
       required:
       - attributes
+      - created_at
       - id
       - last_editor
       - last_modified
@@ -20797,23 +21059,31 @@ components:
           default: false
         status:
           enum:
+          - pending
           - challenge_verification
           - active
-          - pending
+          - inactive
+          - expired
           - failed
           type: string
-          description: '* `challenge_verification` - Challenge Verification
+          description: '* `pending` - Pending
+
+            * `challenge_verification` - Challenge Verification
 
             * `active` - Active
 
-            * `pending` - Pending
+            * `inactive` - Inactive
+
+            * `expired` - Expired
 
             * `failed` - Failed'
           readOnly: true
           x-extensible-enum:
+          - pending
           - challenge_verification
           - active
-          - pending
+          - inactive
+          - expired
           - failed
         status_detail:
           type: string
@@ -20863,6 +21133,13 @@ components:
           type: string
           readOnly: true
           pattern: ^.*$
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Timestamp of the certificate creation on the platform.
+          pattern: ^.*$
         last_modified:
           type: string
           format: date-time
@@ -20881,6 +21158,7 @@ components:
       required:
       - authority
       - challenge
+      - created_at
       - csr
       - id
       - issuer
@@ -20958,23 +21236,31 @@ components:
           default: false
         status:
           enum:
+          - pending
           - challenge_verification
           - active
-          - pending
+          - inactive
+          - expired
           - failed
           type: string
-          description: '* `challenge_verification` - Challenge Verification
+          description: '* `pending` - Pending
+
+            * `challenge_verification` - Challenge Verification
 
             * `active` - Active
 
-            * `pending` - Pending
+            * `inactive` - Inactive
+
+            * `expired` - Expired
 
             * `failed` - Failed'
           readOnly: true
           x-extensible-enum:
+          - pending
           - challenge_verification
           - active
-          - pending
+          - inactive
+          - expired
           - failed
         status_detail:
           type: string
@@ -21034,6 +21320,13 @@ components:
           type: string
           readOnly: true
           pattern: ^.*$
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Timestamp of the certificate creation on the platform.
+          pattern: ^.*$
         last_modified:
           type: string
           format: date-time
@@ -21074,19 +21367,7 @@ components:
       - authority
       - challenge
       - common_name
-      - csr
-      - id
-      - issuer
-      - last_editor
-      - last_modified
-      - managed
       - name
-      - product_version
-      - renewed_at
-      - status
-      - status_detail
-      - subject_name
-      - validity
       additionalProperties: false
     CertificateResponse:
       type: object
@@ -21122,6 +21403,14 @@ components:
         last_editor:
           type: string
           readOnly: true
+          pattern: ^.*$
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Timestamp of the certificate revocation list creation on the
+            platform.
           pattern: ^.*$
         last_modified:
           type: string
@@ -21161,6 +21450,7 @@ components:
           maxLength: 30720000
           minLength: 1
       required:
+      - created_at
       - crl
       - id
       - issuer
@@ -21247,23 +21537,31 @@ components:
           default: false
         status:
           enum:
+          - pending
           - challenge_verification
           - active
-          - pending
+          - inactive
+          - expired
           - failed
           type: string
-          description: '* `challenge_verification` - Challenge Verification
+          description: '* `pending` - Pending
+
+            * `challenge_verification` - Challenge Verification
 
             * `active` - Active
 
-            * `pending` - Pending
+            * `inactive` - Inactive
+
+            * `expired` - Expired
 
             * `failed` - Failed'
           readOnly: true
           x-extensible-enum:
+          - pending
           - challenge_verification
           - active
-          - pending
+          - inactive
+          - expired
           - failed
         status_detail:
           type: string
@@ -21324,6 +21622,13 @@ components:
         last_editor:
           type: string
           readOnly: true
+          pattern: ^.*$
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Timestamp of the certificate creation on the platform.
           pattern: ^.*$
         last_modified:
           type: string
@@ -21390,28 +21695,14 @@ components:
           writeOnly: true
           pattern: ^.*$
       required:
-      - authority
-      - challenge
       - common_name
       - country
-      - csr
       - email
-      - id
-      - issuer
-      - last_editor
-      - last_modified
       - locality
-      - managed
       - name
       - organization
       - organization_unity
-      - product_version
-      - renewed_at
       - state
-      - status
-      - status_detail
-      - subject_name
-      - validity
       additionalProperties: false
     PaginatedCertificateList:
       type: object
@@ -21525,23 +21816,31 @@ components:
           default: false
         status:
           enum:
+          - pending
           - challenge_verification
           - active
-          - pending
+          - inactive
+          - expired
           - failed
           type: string
-          description: '* `challenge_verification` - Challenge Verification
+          description: '* `pending` - Pending
+
+            * `challenge_verification` - Challenge Verification
 
             * `active` - Active
 
-            * `pending` - Pending
+            * `inactive` - Inactive
+
+            * `expired` - Expired
 
             * `failed` - Failed'
           readOnly: true
           x-extensible-enum:
+          - pending
           - challenge_verification
           - active
-          - pending
+          - inactive
+          - expired
           - failed
         status_detail:
           type: string
@@ -21591,6 +21890,13 @@ components:
           type: string
           readOnly: true
           pattern: ^.*$
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Timestamp of the certificate creation on the platform.
+          pattern: ^.*$
         last_modified:
           type: string
           format: date-time
@@ -21627,6 +21933,14 @@ components:
         last_editor:
           type: string
           readOnly: true
+          pattern: ^.*$
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Timestamp of the certificate revocation list creation on the
+            platform.
           pattern: ^.*$
         last_modified:
           type: string
@@ -21758,7 +22072,7 @@ components:
 
         **How to get a token:**
 
-        1. Log in to [Azion Console](https://console.azion.com)
+        1. Log in to [Azion Console](https://stage-console.azion.com)
 
         2. Go to Account Menu > Personal Tokens
 
