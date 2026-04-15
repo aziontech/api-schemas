@@ -22,6 +22,7 @@ functions:
   - ./checkPathEndsWithSForList
   - ./checkDataObjectType
   - ./checkDataKeysPresence
+  - ./checkCreatedAtField
 
 rules:
   # ============================================================================
@@ -585,3 +586,19 @@ rules:
     then:
       field: x-extensible-enum
       function: truthy
+
+  # ============================================================================
+  # 23. CREATED_AT FIELD
+  # ============================================================================
+
+  check-created-at-field:
+    description: |
+      Ensures that POST creation endpoints include a 'created_at' field
+      in their response schema for proper resource tracking and auditing.
+      Reports WARN when a variation like 'created' is used instead of 'created_at'.
+      Endpoints without created_at should be added to EXCEPTIONS list.
+    message: "{{error}}"
+    severity: warn
+    given: $
+    then:
+      function: checkCreatedAtField

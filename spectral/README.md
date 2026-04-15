@@ -31,8 +31,8 @@ For more details and specific examples, refer to the complete document.
 
 This document describes all custom Spectral rules configured in `spectral/spectral.yaml`.
 
-**Total Rules**: 61 (26 original + 35 new)  
-**Custom Functions**: 16 (all implemented)
+**Total Rules**: 62 (26 original + 36 new)
+**Custom Functions**: 17 (all implemented)
 
 ---
 
@@ -336,11 +336,26 @@ This document describes all custom Spectral rules configured in `spectral/spectr
 - **Description**: Enums must include x-extensible-enum to ensure forward compatibility
 - **Purpose**: Allows clients to handle unknown enum values gracefully without breaking
 
+### 23. Created_at Field
+
+#### `check-created-at-field`
+- **Severity**: error
+- **Description**: Ensures that POST creation endpoints include a 'created_at' field in their response schema for proper resource tracking and auditing
+- **Function**: `checkCreatedAtField`
+- **Behavior**:
+  - Reports ERROR when the field is missing entirely
+  - Reports WARNING when a variation like 'created' is used instead of the preferred 'created_at'
+- **Detection**: Identifies creation endpoints by:
+  - Response status `201` (Created)
+  - `operationId` containing `create` or `new`
+  - `summary`/`description` with creation patterns like "Create a", "Create new"
+- **Exceptions**: Supports allowlisting by `operationId` or `path` in the `EXCEPTIONS` object in the function
+
 ---
 
 ## Summary
 
-All rules are documented organized into 22 categories covering:
+All rules are documented organized into 23 categories covering:
 - Operation IDs and naming conventions
 - Path and query parameters
 - Status codes and error handling
@@ -350,5 +365,6 @@ All rules are documented organized into 22 categories covering:
 - Security and authorization
 - Business domain naming
 - Extensible enums for forward compatibility
+- Created_at field validation for auditing
 
 For implementation details, see `spectral/spectral.yaml`.
