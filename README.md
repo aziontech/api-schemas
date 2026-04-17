@@ -17,16 +17,12 @@ Legacy API specifications are available in the `v3/` directory for backward comp
 # View with Swagger UI
 npx @redocly/cli preview-docs openapi.yaml
 
-# Validate with Spectral
-npx @stoplight/spectral-cli lint openapi.yaml --ruleset spectral/spectral.yaml
+# Validate OpenAPI
+npx @redocly/cli lint openapi.yaml
 
 # Generate client SDKs
 openapi-generator-cli generate -i openapi.yaml -g python -o ./client
 ```
-
-## 📚 Documentation
-
-- **[Spectral Validation Rules](spectral/README.md)** - Comprehensive guide to all custom Spectral linting rules
 
 ## 🔄 Synchronization
 
