@@ -38,12 +38,6 @@ jobs:
           cp v4-source/openapi.yaml openapi.yaml
           echo "Synced openapi.yaml from azionapi-v4-openapi"
 
-      - name: Sync spectral rules
-        run: |
-          rm -rf spectral
-          cp -r v4-source/spectral spectral
-          echo "Synced spectral rules from azionapi-v4-openapi"
-
       - name: Cleanup
         run: rm -rf v4-source
 
@@ -61,6 +55,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add openapi.yaml spectral/
-          git commit -m "chore: sync openapi.yaml and spectral from azionapi-v4-openapi"
+          git add openapi.yaml
+          git commit -m "chore: sync openapi.yaml from azionapi-v4-openapi"
           git push
