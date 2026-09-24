@@ -20,13 +20,13 @@ jobs:
 
     steps:
       - name: Checkout azionapi-openapi
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           token: ${{ secrets.GLOBAL_TOKEN }}
           fetch-depth: 0
 
       - name: Checkout azionapi-v4-openapi
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: aziontech/azionapi-v4-openapi
           ref: ${{ github.event.inputs.source_ref || 'main' }}
