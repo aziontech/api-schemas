@@ -163,7 +163,7 @@ jobs:
         if: false
         # if: ${{ steps.create-pull-request.outputs.pr-link }} - TODO: add secret for slack_webhook
         id: slack
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: slackapi/slack-github-action@v4.0.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         with:
