@@ -17,16 +17,20 @@ Legacy API specifications are available in the `v3/` directory for backward comp
 # View with Swagger UI
 npx @redocly/cli preview-docs openapi.yaml
 
-# Validate OpenAPI
-npx @redocly/cli lint openapi.yaml
-
 # Generate client SDKs
 openapi-generator-cli generate -i openapi.yaml -g python -o ./client
 ```
 
+Validation runs in the [azionapi-v4-processor](https://github.com/aziontech/azionapi-v4-processor) sync, which lints `openapi.yaml` with its v4 Spectral ruleset and reports the result as the `Validate OpenAPI` status on the sync PR.
+
 ## 🔄 Synchronization
 
-The `openapi.yaml` file is automatically synchronized from [azionapi-v4-openapi](https://github.com/aziontech/azionapi-v4-openapi) when changes are merged to the main branch.
+The `openapi.yaml` file is synchronized by two sources:
+
+- The [azionapi-v4-processor](https://github.com/aziontech/azionapi-v4-processor) sync, which opens a PR after each production promotion that publishes v4, or after a manual run, and posts the `Validate OpenAPI` status on it
+- The `sync-v4.yml` workflow, dispatched from [azionapi-v4-openapi](https://github.com/aziontech/azionapi-v4-openapi) or run by hand, which commits straight to `main`
+
+Only the processor sync posts the `Validate OpenAPI` status.
 
 ## License
 
